@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { NoteProvider } from "./context/NotesContext";
+import { ToastProvider } from "./context/ToastContext";
 import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import { NotesPage } from "./pages/NotesPages";
@@ -16,25 +17,36 @@ function App() {
   return (
     <AuthProvider>
       <NoteProvider>
-        <BrowserRouter>
-          <main className="container mx-auto px-10">
+        <ToastProvider>
+          <BrowserRouter>
             <MainLayout />
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-
-              <Route element={<ProtectedRoute />}>
-                <Route path="/notes" element={<NotesPage />} />
-                <Route path="/add-note" element={<NotesFormPage />} />
-                <Route path="/notes/:id" element={<NotesFormPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-              </Route>
-            </Routes>
-          </main>
-        </BrowserRouter>
+            <AnimatedRoutes />
+          </BrowserRouter>
+        </ToastProvider>
       </NoteProvider>
     </AuthProvider>
+  );
+}
+
+function AnimatedRoutes() {
+  const location = useLocation();
+  return (
+    <main className="container mx-auto px-4 sm:px-6 lg:px-10 py-6">
+      <div key={location.pathname} className="animate-page-in">
+        <Routes location={location}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="/notes" element={<NotesPage />} />
+            <Route path="/add-note" element={<NotesFormPage />} />
+            <Route path="/notes/:id" element={<NotesFormPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+          </Route>
+        </Routes>
+      </div>
+    </main>
   );
 }
 

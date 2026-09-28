@@ -2,7 +2,6 @@ import { createContext, useState, useContext, useEffect } from "react";
 import { registerRequest, loginRequest, verifyTokenRequest } from "../api/auth";
 
 import Cookies from "js-cookie";
-import axios from "axios";
 
 export const AuthContext = createContext();
 
@@ -23,11 +22,12 @@ export const AuthProvider = ({ children }) => {
   const signup = async (user) => {
     try {
       const res = await registerRequest(user);
-      console.log(res.data);
       setUser(res.data);
       setIsAuthenticated(true);
+      return true;
     } catch (error) {
       setErrors(error.response.data);
+      return false;
     }
   };
 
@@ -39,15 +39,16 @@ export const AuthProvider = ({ children }) => {
   const signin = async (user) => {
     try {
       const res = await loginRequest(user);
-      console.log(res.data);
       setUser(res.data);
       setIsAuthenticated(true);
+      return true;
     } catch (error) {
-      console.log(error);
       if (Array.isArray(error.response.data)) {
-        return setErrors(error.response.data);
+        setErrors(error.response.data);
+      } else {
+        setErrors([error.response.data.message]);
       }
-      setErrors([error.response.data.message]);
+      return false;
     }
   };
   useEffect(() => {
@@ -80,7 +81,7 @@ export const AuthProvider = ({ children }) => {
         setUser(res.data);
         setLoading(false);
         return;
-      } catch (error) {
+      } catch {
         setIsAuthenticated(false);
         setUser(null);
         setLoading(false);

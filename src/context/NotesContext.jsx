@@ -19,33 +19,42 @@ export const useNotes = () => {
 
 export function NoteProvider({ children }) {
   const [notes, setNotes] = useState([]);
-  const [param, setParam] = useState(null);
+  const [loadingNotes, setLoadingNotes] = useState(false);
 
   const getNotes = async () => {
+    setLoadingNotes(true);
     try {
       const res = await getNotesRequest();
-      console.log("Antes de setNotes: ", notes);
-      console.log("Datos recibidos: ", res.data);
       setNotes(res.data);
     } catch (error) {
       console.error("Error al obtener notas:", error);
+    } finally {
+      setLoadingNotes(false);
     }
   };
 
   const createNotes = async (note) => {
     try {
-      const res = await createNotesRequest(note);
-      console.log(res.data);
+      await createNotesRequest(note);
+      await getNotes();
+      return true;
     } catch (error) {
       console.log(error);
+      return false;
     }
   };
+
   const deleteNote = async (id) => {
     try {
       const res = await deleteNotesRequest(id);
-      if (res.status == 204) setNotes(notes.filter((note) => note._id != id));
+      if (res.status == 204) {
+        setNotes((prev) => prev.filter((note) => note._id != id));
+        return true;
+      }
+      return false;
     } catch (error) {
       console.log(error);
+      return false;
     }
   };
 
@@ -60,21 +69,39 @@ export function NoteProvider({ children }) {
 
   const updateNote = async (id, note) => {
     try {
-      const res = await updateNotesRequest(id, note);
-      console.log(res);
+      await updateNotesRequest(id, note);
+      await getNotes();
+      return true;
     } catch (error) {
       console.error(error);
+      return false;
     }
   };
+
+  const toggleComplete = async (id, completed) => {
+    try {
+      await updateNotesRequest(id, { completed });
+      setNotes((prev) =>
+        prev.map((n) => (n._id === id ? { ...n, completed } : n))
+      );
+      return true;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
+  };
+
   return (
     <NoteContext.Provider
       value={{
         notes,
+        loadingNotes,
         getNotes,
         createNotes,
         deleteNote,
         getNote,
         updateNote,
+        toggleComplete,
       }}
     >
       {children}
