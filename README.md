@@ -1,12 +1,82 @@
-<<<<<<< HEAD
-# FAPPSC
-=======
-# React + Vite
+App de notas (MongoDB + Backend Node/Express + Frontend React/Vite) desplegada con Docker Compose.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Integrantes:** Juan David España – Micheel Fernanda Gómez
 
-Currently, two official plugins are available:
+## Requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
->>>>>>> d687390 (First commit)
+- VM Ubuntu 24.04 con Vagrant (`docker-vagrant`) con Docker, Docker Compose y Git instalados.
+- En el `Vagrantfile` se usa una red privada con IP fija para que la IP de la VM no cambie cuando cambia la red WiFi:
+
+```ruby
+config.vm.network "private_network", ip: "192.168.56.10"
+config.vm.network "public_network"
+```
+
+## Estructura
+
+```
+Proyecto/
+├── docker-compose.yml
+├── practica-api-mongodb/   # Backend (este repo)
+└── FAPPSC/                 # Frontend
+```
+
+## Pasos para levantar la app
+
+1. Clonar los repositorios:
+
+```bash
+mkdir -p ~/Proyecto && cd ~/Proyecto
+git clone https://github.com/Juanda2101/practica-api-mongodb.git
+git clone https://github.com/Juanda2101/FAPPSC.git
+```
+
+2. Copiar el `docker-compose.yml` (está en este repo) a la carpeta `Proyecto/`:
+
+```bash
+cp practica-api-mongodb/docker-compose.yml .
+```
+
+3. Revisar la IP de la VM en el frontend y en el CORS del backend:
+   - `FAPPSC/src/api/axios.js` → `baseURL: "http://192.168.56.10:3000/api"`
+   - `practica-api-mongodb/src/app.js` → `origin: "http://192.168.56.10:5173"`
+
+4. Construir y levantar los contenedores:
+
+```bash
+docker compose up --build -d
+docker ps
+```
+
+Deben aparecer 3 contenedores: `mongo_container`, `backend_container` y `frontend_container`.
+
+5. Verificar que el backend se conectó a Mongo:
+
+```bash
+docker compose logs backend --tail 10
+```
+
+Debe salir `DB is connected`.
+
+## Acceso a los servicios
+
+| Servicio | Dirección |
+|---|---|
+| Frontend (Vite) | http://192.168.56.10:5173 |
+| Backend (Node) | http://192.168.56.10:3000 |
+| MongoDB | mongodb://admin:password123@192.168.56.10:27017/ |
+
+## Verificar que los datos están en MongoDB
+
+```bash
+docker exec -it mongo_container mongosh -u admin -p password123 --authenticationDatabase admin
+use appdb
+show collections
+db.notes.find()
+```
+
+## Problemas que tuvimos y cómo se arreglaron
+
+- **`Cannot find package 'express'`**: el volumen `./practica-api-mongodb:/usr/src/app` tapaba el `node_modules` que se instala en la imagen. Se agregó el volumen `/usr/src/app/node_modules` en el compose.
+- **El backend se conectaba a una IP vieja**: el `db.js` tenía la IP escrita a mano. Se cambió para que lea `process.env.MONGO_URI`, que la define el compose.
+- **La IP de la VM cambiaba al cambiar de WiFi**: se agregó la red privada `192.168.56.10` en el `Vagrantfile`.
