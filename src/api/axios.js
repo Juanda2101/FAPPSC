@@ -1,7 +1,8 @@
 import axios from "axios";
 
-const instace = axios.create({
-  baseURL: "/api",
+const instance = axios.create({
+  baseURL: "http://192.168.56.10:3000/api",
   withCredentials: true,
 });
-export default instace;
+
+export default instance;
